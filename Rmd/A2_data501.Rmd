@@ -221,7 +221,20 @@ The following are the specific steps taken to build this R package.
 
 The package uses one function, `influenceR()`, which was first built and tested in this Rmarkdown file. (please see code chunks below). Once the functionality was sufficiently acceptable, a new project was created and synced with a git repository.  
 
+## Function 
+
+
+
 ## creating an R package 
+
+```{r eval=FALSE, include=T}
+## steps 
+devtools::load_all()
+devtools::check()
+document()
+install()
+```
+
 
 ### libraries 
 
@@ -247,308 +260,31 @@ document()
 ```
 
 
-
 ### set up license
 ```{r}
 usethis::use_mit_license()
 ```
 
-
-# Function 
-
-## plot functions
+### install 
 
 ```{r}
-cooks_plot <- function(h, label, dist) {
-    # cooks plot with labels
-       plot(dist, type = "h", 
-            main = "Cook's Distance", 
-            #ylim = c(min(cooks_distance) - mean(co), max(cooks_distance)+1),
-            ylab = "Cook's Distance", 
-            xlab = "Observation", col = "navyblue")
-       abline(h = h, col = "darkred", lty = 2)
-       text(1:length(label), 
-            dist, labels = label, pos = 4, cex = 0.8, col = "navyblue")
-  }
-  
-dffits_plot <- function(h, label, dist) {
-    # DFFITS with labels
-    plot(dist, type = "h", 
-       main = "DFFITS", 
-       ylab = "DFFITS", 
-       xlab = "Observation", col = "forestgreen")
-    abline(h = h, col = "darkred", lty = 2)
-    abline(h = -h, col = "darkred", lty = 2)
-    text(1:length(dist), 
-       dist, labels = label, pos = 4, cex = 0.8, col = "forestgreen")
-  }
-       
-  
-hadi_plot <- function(label, dist) {
-    # Hadi's Measure with labels
-    plot(dist, type = "h", 
-       main = "Hadi's Influence Measure", 
-       ylab = "Hadi's Measure", 
-       xlab =   "Observation", col = "violet")
-    abline(h = 2, col = "darkgrey", lty = 2)
-    text(1:length(dist), 
-       dist, labels = label, pos = 4, cex = 0.8,   col = "violet")
-  }
+install()
 ```
 
-## Main Function
-
-```{r}
-
-influenceR <- function(model, data, plot = "none") {
-  
-  ##### input validation 
-  if (!is.data.frame(data)) {
-    stop("Input data must be a data.frame.")
-  }
-  
-  if (!inherits(model, c("lm", "glm"))) {
-    stop("Input model must be an lm or glm object.")
-  }
-  
-  if (nrow(data) < 5) {
-    stop("Dataset is too small")
-  }
-  
-  if (ncol(data) < 2) {
-  stop("Input data must have at least 2 columns.")
-  }
-  
-  if (nrow(data) < ncol(data)) {
-    stop("Dataset is the wrong dimension")
-  }
-  
-  if (sum(is.na(data)) / prod(dim(data)) * 100 > 5) {
-    stop("Input data contains more than 5% NA values.")
-  }
-  
-  if (any(is.infinite(as.matrix(data)))) {
-    stop("Input data contains infinite values.")
-  }
-  
-  if (!plot %in% c("none", "all", "cooks", "DFFITS", "Hadi") ) {
-    stop("Input for plot must be either: none, all, cooks, DFFITS, or Hadi")
-  }
-  
-  ##### obtain model variables 
-  # get y
-  y <- model$model[1]
-  y <- data.matrix(y)
-  # get X matrix
-  #X <- model$model[-1]
-  #X <- cbind(intercept = rep(1, nrow(X)), X)
-  #X <- data.matrix(X)
-  X <- model.matrix(model, data = data)
-  
-  # compute Beta hat
-  XtX <- t(X) %*% X
-  XtX_inv <- solve(XtX)
-  beta_hat <- XtX_inv %*% t(X) %*% y
-  
-  #get y-hat (fitted values) 
-  y_hat <- X %*% beta_hat
-  #get residuals
-  residuals <- y - y_hat
-  
-  #get them Hat matrix (and diagonals)
-  H <- X %*% XtX_inv %*% t(X)
-  leverage <- diag(H)
-  
-  #get studentised residuals 
-  n <- nrow(X)
-  p <- ncol(X)
-  RSE <- sqrt(sum(residuals^2) / (n - p))
-  MSE <- sum(residuals^2) / (n - p)
-  studentized_residuals <- residuals / (RSE * sqrt(1 - leverage))
-  high_residuals <- studentized_residuals[abs(studentized_residuals)>= 2]
-  
-  ##### distance measures 
-  
-  # Cook's D
-  cooks_distance <- (residuals^2 / (p * MSE)) * (leverage / (1 - leverage)^2)
-  
-  # DFFITs 
-  dffits <- studentized_residuals * sqrt(leverage) / (1 - leverage)
-  
-  # Hadi's
-  H1 <- leverage / (1 - leverage)
-  H2 <- (residuals^2) / (MSE * (1 - leverage))
-  Hadi_influence <- H1 + H2
-  
-  ##### put it all into a dataframe
-  influencers <- data.frame(cooks_distance,dffits,Hadi_influence)
-  names(influencers) <- c("Cook's D", "DFFITs", "Hadi's Influence")
-  
-  #### Plotting
-  # options: "none", "all", "Cooks", "DFFITS", "Hadi"
-  
-  #cooks threshold line: 
-  cooks_cutoff <- 4/nrow(data)
-  dffits_cutoff <- 2*sqrt((p)/(n-p-1))
-  hadi_cutoff <- 2
-  
-  # labels 
-  cooks_label <- rep(NA,length(cooks_distance))
-  dffits_label <- rep(NA,length(dffits))
-  hadi_label <- rep(NA,length(Hadi_influence))
-  for (i in 1:nrow(data)){
-    cooks_label[i] <- ifelse(abs(cooks_distance[i]) >= cooks_cutoff, i, "")
-    dffits_label[i] <- ifelse(abs(dffits[i]) > dffits_cutoff, i, "")
-    hadi_label[i] <- ifelse(abs(Hadi_influence[i]) > hadi_cutoff, i, "")
-  }
-  
-  
-  
-  # empty list of functions 
-  plots <- list()
-  
-  cook_guides <- data.frame(Observation = 1:length(cooks_distance), 
-                                   cooks_distance, Label = cooks_label)
-  dffits_guides <- data.frame(Observation = 1:length(dffits), 
-                                   dffits, Label = dffits_label)
-  hadi_guides <- data.frame(Observation = 1:length(Hadi_influence), 
-                                   Hadi_influence, Label = hadi_label)
-  
-  
-  if (plot == "cooks" | plot == "all") {
-    
-    plots$Cooks <- ggplot(cook_guides, aes(x = Observation, y = cooks_distance)) +
-    geom_segment(aes(xend = Observation, yend = 0)) +
-    geom_hline(yintercept = cooks_cutoff, linetype = "dashed", color = "darkred") +
-    geom_text(aes(label = Label), vjust = -0.5) +
-    labs(title = "Cook's Distance", y = "Cook's Distance", x = "Observation") 
-  }
-  
-  if (plot == "DFFITS" | plot == "all") {
-    plots$DFFITS <- ggplot(dffits_guides, aes(x = Observation, y = dffits)) +
-    geom_segment(aes(xend = Observation, yend = 0)) +
-    geom_hline(yintercept = dffits_cutoff, linetype = "dashed", color = "darkred") +
-    geom_text(aes(label = Label), vjust = -0.5) +
-    labs(title = "DFFITS", y = "DFFITS", x = "Observation") 
-  }
-  
-  if (plot == "Hadi" | plot == "all") {
-    plots$Hadi <- ggplot(hadi_guides, aes(x = Observation, y = Hadi_influence)) +
-    geom_segment(aes(xend = Observation, yend = 0)) +
-    geom_hline(yintercept = hadi_cutoff, linetype = "dashed", color = "darkred") +
-    geom_text(aes(label = Label), vjust = -0.5) +
-    labs(title = "Hadi's Influence", y = "Hadi's Influence", x = "Observation")
-  }
-
-  #### return
-  
-  return(list(influence_measures = influencers, plots = plots))
-  
-}
-
-
-```
-
-# Tests
-
-### Create Test File
+### set up testing 
 
 ```{r message=FALSE}
 usethis::use_testthat()
 ```
 
-### Sample data and models
-
-```{r}
-#test model:
-data1 <- mtcars
-model1 <- lm(mpg ~ wt + hp, data = data1)
-
-### generated data
-data2 <- randu
-model2 <- glm(z ~ x + y, data = data2)
-data3 <- data.frame(a = rep(c(NA,runif(1)), 50), b = rnorm(100), c=(runif(100)))
-model3 <- lm(b ~ a + c, data = data3)
-data4 <- data.frame(y = c(runif(10),Inf), x = 1:11, z = 21:31)
-model4 <- lm(z ~ x, data = data4)
-data5 <- data.frame(x = c(1:4), y = c(rnorm(4)))
-model5 <- lm(y ~ x, data = data5)
-data6 <- data.frame(y = c(1:10))
-model6 <- lm(y ~ 1, data = data6)
-matx7 <- matrix(1:30, nrow = 5)
-data7 <- data.frame(matx7)
-model7 <- lm(X1 ~ X2, data = data7)
-
-```
 
 
-### function tests
-
-
-```{r tests}
-context("Testing influenceR context")
-
-## invalid inputs 
-test_that("function influenceR gives helpful errors", 
-          {
-            expect_error(influenceR(model1, matrix(data1)), 
-               "Input data must be a data.frame.")
-            
-            expect_error(influenceR(mtcars, mtcars), 
-               "Input model must be an lm or glm object.")
-            
-            expect_error(influenceR(model6, data6),
-                "Input data must have at least 2 columns.")
-            
-            expect_error(influenceR(model5, data5), 
-               "Dataset is too small")
-            
-            expect_error(influenceR(model7, data7), 
-               "Dataset is the wrong dimension")
-            
-            expect_error(influenceR(model4, data4), 
-               "Input data contains infinite values.")
-            
-              expect_error(influenceR(model3, data3), 
-               "Input data contains more than 5% NA values.")
-              
-              expect_error(influenceR(model1, data1, plot = "phil collins"), 
-               "Input for plot must be either: none, all, cooks, DFFITS, or Hadi")
-              
-              output <- influenceR(model1, data1, plot = "none")
-              expect_true(is.list(output))
-              expect_equal(names(output$influence_measures), c("Cook's D", "DFFITs", "Hadi's Influence"))
-              
-              
-              # Assuming pre-calculated values for a specific row for testing
-              expect_equal(round(output[[1]][1, "Cook's D"], 3), 0.016)
-              expect_equal(round(output[[1]][1, "DFFITs"], 3), -0.223)
-              expect_equal(round(output[[1]][1, "Hadi's Influence"], 3), 1.076)
-            
-            })
-
-## valid inputs
-test_that("function influenceR works with dataframes, lm/glm objects, and plots", {
-  
-  pdf(NULL)
-  on.exit(dev.off())
-  
-  expect_silent(influenceR(model1, mtcars, plot = "none"))
-  expect_silent(influenceR(model1, mtcars, plot = "cooks"))
-  expect_silent(influenceR(model1, mtcars, plot = "DFFITS"))
-  expect_silent(influenceR(model1, mtcars, plot = "Hadi"))
-  expect_silent(influenceR(model1, mtcars, plot = "all"))
-  
-})
-
-```
-
-### Testing using R file
+### Create Test File
 
 **note**: the "R/test.R" file is a duplicate of the code above
 
 ```{r}
-test_file("R/test.R")
+test_file("tests/test.R")
 ```
 
 # Examples
