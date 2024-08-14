@@ -417,44 +417,6 @@ influenceR <- function(model, data, plot = "none") {
     geom_text(aes(label = Label), vjust = -0.5) +
     labs(title = "Hadi's Influence", y = "Hadi's Influence", x = "Observation")
   }
-  
-  
-  #   # cooks plot with labels
-  #      plot(cooks_d, type = "h", 
-  #           main = "Cook's Distance", 
-  #           #ylim = c(min(cooks_distance) - mean(co), max(cooks_distance)+1),
-  #           ylab = "Cook's Distance", 
-  #           xlab = "Observation", col = "navyblue")
-  #      abline(h = cooks_cut, col = "darkred", lty = 2)
-  #      text(1:length(cooks_label), 
-  #           cooks_distance, labels = cooks_label, pos = 4, cex = 0.8, col = "navyblue")
-  # }
-  # 
-  # if (plot == "DFFITS" | plot == "all") {
-  #   # DFFITS with labels
-  #   plot(dffits, type = "h", 
-  #      main = "DFFITS", 
-  #      ylab = "DFFITS", 
-  #      xlab = "Observation", col = "forestgreen")
-  #   abline(h = dffits_cut, col = "darkred", lty = 2)
-  #   abline(h = -dffits_cut, col = "darkred", lty = 2)
-  #   text(1:length(dffits), 
-  #      dffits, labels = dffits_label, pos = 4, cex = 0.8, col = "forestgreen")
-  #   
-  # }
-  #      
-  # 
-  # if (plot == "Hadi" | plot == "all") {
-  #   # Hadi's Measure with labels
-  #   plot(Hadi_influence, type = "h", 
-  #      main = "Hadi's Influence Measure", 
-  #      ylab = "Hadi's Measure", 
-  #      xlab =   "Observation", col = "violet")
-  #   abline(h = 2, col = "darkgrey", lty = 2)
-  #   text(1:length(Hadi_influence), 
-  #      Hadi_influence, labels = hadi_label, pos = 4, cex = 0.8,   col = "violet")
-  # }
-  
 
   #### return
   
