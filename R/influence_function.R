@@ -1,8 +1,12 @@
-#' influenceR
+#' Calculate and Plot Measures of Influence for Linear Models
+#'
+#' @description
+#' This function calculates and evaluates key influence measures, including Cook's Distance, DFFITS, and Hadi's Influence, for linear or generalized linear models by computing diagnostic metrics to identify influential observations. The function has an optional setting that will generate plots to visualize these influence measures, aiding in the detection of data points that may impact the model's fit. This tool is helpful for model assessment and ensuring the reliability of statistical inferences.
+#'
 #'
 #' @param model a glm or lm object
 #' @param data a dataframe
-#' @param plot optional parameter to include plots in the output, default is "none", options include none", "all", "Cooks", "DFFITS", "Hadi"
+#' @param plot optional parameter to include plots in the output, default is "none", options include "none", "all", "Cooks", "DFFITS", "Hadi"
 #'
 #' @return Returns a dataframe with all influential measures. If `plot` parameter is set to anything other than "none", the function will return a list with dataframe and `ggplot2` plot objects.
 #'
@@ -133,12 +137,12 @@ influenceR <- function(model, data, plot = "none") {
   # empty list of functions
   plots <- list()
 
-  cook_guides <- data.frame(Observation = 1:length(cooks_distance),
-                            cooks_distance, Label = cooks_label)
-  dffits_guides <- data.frame(Observation = 1:length(dffits),
-                              dffits, Label = dffits_label)
-  hadi_guides <- data.frame(Observation = 1:length(Hadi_influence),
-                            Hadi_influence, Label = hadi_label)
+  cook_guides <- data.frame("Observation" = 1:length(cooks_distance),
+                            cooks_distance, "Label" = cooks_label)
+  dffits_guides <- data.frame("Observation" = 1:length(dffits),
+                              dffits, "Label" = dffits_label)
+  hadi_guides <- data.frame("Observation" = 1:length(Hadi_influence),
+                            Hadi_influence, "Label" = hadi_label)
 
 
   if (plot == "cooks" | plot == "all") {
@@ -167,7 +171,12 @@ influenceR <- function(model, data, plot = "none") {
   }
 
   #### return
+  if (plot == "none") {
+    return(influencers)
+  }
 
-  return(list(influence_measures = influencers, plots = plots))
+  else {
+    return(list(influence_measures = influencers, plots = plots))
+    }
 
 }
