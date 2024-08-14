@@ -145,36 +145,36 @@ influenceR <- function(model, data, plot = "none") {
   # empty list of functions
   plots <- list()
 
-  cook_guides <- data.frame("Observation" = 1:length(cooks_distance),
-                            cooks_distance, "Label" = cooks_label)
-  dffits_guides <- data.frame("Observation" = 1:length(dffits),
-                              dffits, "Label" = dffits_label)
-  hadi_guides <- data.frame("Observation" = 1:length(Hadi_influence),
-                            Hadi_influence, "Label" = hadi_label)
+  cook_guides <- data.frame(1:length(cooks_distance),
+                            cooks_distance, cooks_label)
+  dffits_guides <- data.frame(1:length(dffits),
+                              dffits, dffits_label)
+  hadi_guides <- data.frame(1:length(Hadi_influence),
+                            Hadi_influence, hadi_label)
 
 
   if (plot == "cooks" | plot == "all") {
 
-    plots$Cooks <- ggplot(cook_guides, aes(x = Observation, y = cooks_distance)) +
-      geom_segment(aes(xend = Observation, yend = 0)) +
+    plots$Cooks <- ggplot(cook_guides, aes(x = cook_guides[,1], y = cooks_distance)) +
+      geom_segment(aes(xend = cook_guides[,1], yend = 0)) +
       geom_hline(yintercept = cooks_cutoff, linetype = "dashed", color = "darkred") +
-      geom_text(aes(label = Label), vjust = -0.5) +
+      geom_text(aes(label = cook_guides[,3]), vjust = 0.75, check_overlap = T, nudge_x = 0.7) +
       labs(title = "Cook's Distance", y = "Cook's Distance", x = "Observation")
   }
 
   if (plot == "DFFITS" | plot == "all") {
-    plots$DFFITS <- ggplot(dffits_guides, aes(x = Observation, y = dffits)) +
-      geom_segment(aes(xend = Observation, yend = 0)) +
+    plots$DFFITS <- ggplot(dffits_guides, aes(x = dffits_guides[,1], y = dffits)) +
+      geom_segment(aes(xend = dffits_guides[,1], yend = 0)) +
       geom_hline(yintercept = dffits_cutoff, linetype = "dashed", color = "darkred") +
-      geom_text(aes(label = Label), vjust = -0.5) +
+      geom_text(aes(label = dffits_guides[,3]),  vjust = 0.75, check_overlap = T, nudge_x = 0.7) +
       labs(title = "DFFITS", y = "DFFITS", x = "Observation")
   }
 
   if (plot == "Hadi" | plot == "all") {
-    plots$Hadi <- ggplot(hadi_guides, aes(x = Observation, y = Hadi_influence)) +
-      geom_segment(aes(xend = Observation, yend = 0)) +
+    plots$Hadi <- ggplot(hadi_guides, aes(x = hadi_guides[,1], y = Hadi_influence)) +
+      geom_segment(aes(xend = hadi_guides[,1], yend = 0)) +
       geom_hline(yintercept = hadi_cutoff, linetype = "dashed", color = "darkred") +
-      geom_text(aes(label = Label), vjust = -0.5) +
+      geom_text(aes(label = hadi_guides[,3]),  vjust = 0.75, check_overlap = T, nudge_x = 0.7) +
       labs(title = "Hadi's Influence", y = "Hadi's Influence", x = "Observation")
   }
 
