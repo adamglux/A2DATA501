@@ -5,6 +5,9 @@
 #' @param plot optional parameter to include plots in the output, default is "none", options include none", "all", "Cooks", "DFFITS", "Hadi"
 #'
 #' @return Returns a dataframe with all influential measures. If `plot` parameter is set to anything other than "none", the function will return a list with dataframe and `ggplot2` plot objects.
+#'
+#' @import ggplot2
+#' @importFrom stats model.matrix
 #' @export
 #'
 #' @examples
@@ -13,17 +16,16 @@
 #' model1 <- lm(mpg ~ wt + hp, data = data1)
 #' sample1 <- influenceR(model1, data1, "all")
 #'
-#' ## apply a theme to a single plot
-#' sample1$plots$Cooks + theme_minimal()
+#' ## show dataframe of measures
+#' sample1$influence_measures
 #'
-#' ## apply a theme to a grid of plots
-#' # suggested package: library(gridExtra)
+#' ## show plots
+#' sample1$plots
 #'
-#' #use lapply to apply a theme to all the plots
-#' g2 <- lapply(sample1$plots, function(p) p+theme_minimal())
-#'
-#' #grid arrange in the gridExtra package
-#' grid.arrange(grobs = g2, ncol = 3)
+#' ## show individual plots
+#' sample1$plots$Cooks
+#' sample1$plots$DFFITS
+#' sample1$plots$Hadi
 #'
 
 
