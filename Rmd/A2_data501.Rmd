@@ -213,6 +213,39 @@ The method is more focused on the impact of each observation on its predicted va
 
 This method is used when a more comprehensive diagnostic is needed that considers both leverage and residuals, especially in situations where you suspect that the influence is due to both the observation's position in the design space and its discrepancy from the model.
 
+# Building R Package 
+
+The following are the specific steps taken to build this R package. 
+
+### initial steps
+
+The package uses one function, `influenceR()`, which was first built and tested in this Rmarkdown file. (please see code chunks below). Once the functionality was sufficiently acceptable, a new project was created and synced with a git repository.  
+
+## creating an R package 
+
+### libraries 
+
+```{r eval=FALSE, include=TRUE}
+library(dplyr)
+library(ggplot2)
+library(testthat)
+library(usethis)
+library(devtools)
+library(roxygen2)
+```
+
+### thorough check 
+
+```{r}
+devtools::check()
+```
+
+
+### set up license
+```{r}
+usethis::use_mit_license()
+```
+
 
 # Function 
 
@@ -339,21 +372,6 @@ influenceR <- function(model, data, plot = "none") {
   H1 <- leverage / (1 - leverage)
   H2 <- (residuals^2) / (MSE * (1 - leverage))
   Hadi_influence <- H1 + H2
-
-  
-  ##### outliers, etc.
-  #prints number of outliers (does nothing for now)
-  if (length(high_residuals) > 0) {
-    #cat("Number of Outliers:", length(high_residuals), "\n")
-  }
-  
-  #calculate influential points 
-  threshold <- 4 / (n - p)
-  influential_points <- which(cooks_distance > threshold)
-  
-  if (length(influential_points) > 0) {
-    #cat("Number of Influential Points:", length(high_residuals),"\n")
-  }
   
   ##### put it all into a dataframe
   influencers <- data.frame(cooks_distance,dffits,Hadi_influence)
@@ -363,9 +381,6 @@ influenceR <- function(model, data, plot = "none") {
   # options: "none", "all", "Cooks", "DFFITS", "Hadi"
   
   #cooks threshold line: 
-  #df1 <- p    
-  #df2 <- n - p
-  #F_critical <- qf(0.5, df1, df2)
   cooks_cutoff <- 4/nrow(data)
   dffits_cutoff <- 2*sqrt((p)/(n-p-1))
   hadi_cutoff <- 2
@@ -545,10 +560,10 @@ grid.arrange(grobs = g2, ncol = 1)
 ## max cooks D vs Hadi's
 cat("difference in max Cook's vs max Hadi's = ", 
     max(sample1$influence_measures$`Cook's D`) - max(sample1$influence_measures$`Hadi's Influence`))
-
-
-
 ```
+
+
+
 
 
 
