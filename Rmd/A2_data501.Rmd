@@ -1,0 +1,608 @@
+---
+title: "Assignment2 DATA501"
+author: "Adam g. 300619334"
+date: "August 2024"
+fontsize: 10pt
+output:
+  pdf_document: null
+  theme: united
+  df_print: kable
+  html_document:
+    df_print: paged
+bibliography: refs.bib
+nocite: '@*'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Packages
+
+```{r packages,results='hide', collapse=TRUE, message=FALSE}
+library(knitr)
+library(pander)
+library(dplyr)
+library(ggplot2)
+library(basetheme)
+library(testthat)
+```
+
+<!-- Settings and Options -->
+<!--  -  -->
+<!--  - -->
+<!--  -  -->
+
+```{r ggplot_theme, echo = FALSE}
+
+# NB: for the purposes of style and form, plots and graphs will use the following code to keep style consistent. Code for this function will not show in the knitted PDF file, but is available from the .Rmd file. 
+
+#####  ggplot theme ######
+
+adams.plot <- function() {
+  theme(
+
+    # add border 1)
+    panel.border = element_rect(colour = "grey4", fill = NA, linetype = 1),
+
+    # color background 2)
+    panel.background = element_rect(fill = NA),
+
+    # modify grid 3)
+    #panel.grid.major.x = element_line(colour = "grey4", linetype = 3, size = 0.25),
+    panel.grid.minor.x = element_blank(),
+   # panel.grid.major.y =  element_line(colour = "grey4", linetype = 3, size = 0.25),
+    panel.grid.minor.y = element_blank(),
+
+    # modify text, axis and colour 4) and 5)
+    axis.text = element_text(colour = "grey4", face = "italic", family = "Courier", size = 9),
+    axis.title = element_text(colour = "grey4", family = "Courier", size = 9),
+    plot.title = element_text(colour = "grey4", family = "Courier", size = 9),
+    axis.ticks = element_line(colour = "grey4"),
+    # legend at the bottom 6)
+    legend.position = "bottom"
+
+  )
+}
+
+```
+
+```{r plot_theme, echo = FALSE}
+
+#####  base-plots theme ######
+
+adamplot <- basetheme("clean")
+
+
+adamplot$palette <- palette("Okabe-Ito")  # numbered colors - shades of grey
+adamplot$bg  <- "white"                         # some colors
+adamplot$fg  <- "gray20"                       # some colors
+adamplot$col.main <- "grey4"                    # some colors
+adamplot$col.axis <- "grey4"                   # some colors
+adamplot$col.lab  <- "grey4"                   # some colors
+adamplot$family   <-  "mono"                    # change font
+# adamplot$lab      <-  c(5,5,7)                # num ticks on axes
+adamplot$cex.axis <-  0.8                       # smaller axis labels
+adamplot$las      <-  1                         # 1 for always horizontal axis labels
+adamplot$rect.border <- "grey4"                 # box around the plot
+adamplot$rect.lwd    <- 1                       # ticker border
+adamplot$font.main <-  1                        # font for main title
+adamplot$pch <- "."                              # symbol option
+adamplot$cex <- 0.75
+
+
+basetheme(adamplot)
+```
+
+```{r pander_options, echo=FALSE}
+#pander options
+panderOptions('missing', '')
+panderOptions('table.split.table', Inf)
+```
+
+```{r misc, echo = FALSE}
+
+# plot sizes 
+# chunk setup: 
+#{r echo = FALSE, fig.height = 4, fig.width = 5, fig.align='center'}
+# 6.5x4.5 is used by default
+
+# Pander settings 
+
+# Additional settings
+#update: set WD to 
+# devtools::install("../skeleton")
+# https://bookdown.org/yihui/rmarkdown/pdf-document.html
+```
+  
+# Background
+
+### Cooks Distance 
+
+In the Detection of Influential Observation in Linear Regression, Cook demonstrates,
+
+>> A new measure based on confidence ellipsoids... for judging the contribution of each data point to the determination of the least squares estimate of the parameter vector in full rank linear regression models. It is shown that the measure combines information from the studentized residuals and the variances of the residuals and predicted values. Two examples are presented. [@cook_detection_1977]
+
+In regression analysis, critical observations may skew, or effect the coefficients of estimation, and often these points need further analysis or deletion. Cook addresses the problem of determining which points are such of such critical value, by suggesting an interpretable measure that combines the variance of each residual, $\hat V(R_i)$, with studentised residuals, $t_i$, "(i.e. the residual divided by its standard error) have been recommended as more appropriate than the standardized residuals (i.e., the residual divided by the square root of the mean square for error) for detecting outliers." (@cook_detection_1977)
+
+Studentised residual is given by:
+
+$$t_i = [\frac{Y_i - \mathbf{x_i}'\hat \beta}{s\sqrt{1-v_i}}]$$
+
+Where $v_i$ is the diagonal of the hat matrix (later given as $h_{ii}$). In the vector linear regression model, $\mathbf{Y} = \mathbf{X}\beta + \mathbf{e}$, residuals are given by: $\mathbf{R} = (R_i) = (\mathbf{I} - \mathbf{X}(\mathbf{X'}\mathbf{X})^{-1}\mathbf{X'})\mathbf{Y}$. 
+
+Cook demonstrates that when we remove the ith point from the dataset, to produce $\mathbf{X}_{(i-1)}$, we get a measure of influence for the ith point in the vector of parameter estimates, $\hat \beta_{(-i)} = \hat \beta - \hat \beta_{i-1}$. Cook classifies this as when $D_i$ is greater than the median point of the $F_{p+1,(n-p-1)}$ distribution. This is measured by:^[note: *p* is the set of predictors of a full rank matrix, $\mathbf{X}$, and is sometimes given as $p + 1$, to indicate that the measure includes all parameters plus an intercept.]  
+
+$$D_i = \frac{t_i^2}{p}\frac{V(\hat Y_i)}{V(R_i)}$$
+
+Steps for calculating Cook's distance in R (assuming that model has been fit):
+
+- Calculate regression coefficients, $\hat \beta = (X^TX)^{-1}X^Ty$
+- calculate $\hat y_i = X\hat \beta$ and residuals $r_i = y_i - \hat y_i$
+- get $\hat \sigma^2 = \frac{1}{n-p}\sum r^2_i$
+- Obtain the Hat matrix: $H = X(X^TX)^{-1}X^T$
+- Diagonal values are leverage values, $h_{ii}$
+- Calculate studentised residuals $t_i = \frac{r_i}{s\sqrt{1-h_ii}}$, for $s = \sqrt{\frac{\sum e^2}{n-p}}$
+- store any values greater |2| 
+- Get $V(R_i) = (I - H)\sigma^2$, $V(\hat Y) = H\sigma^2$
+- Calculate $D_i = \frac{t_i^2}{p}\frac{V(\hat Y_i)}{V(R_i)}$
+
+### DFFITS
+
+DFFITS is a diagnostic measure that assesses how much a fitted value for a point changes when that point is omitted from the model [@welsch_linear_1977]. DFFITS is similar to Cook's distance but provides a slightly different perspective by focusing on the change in predicted values rather than the overall fit of the model.
+
+This measure is given by: [@uzuke_identifying_2021]
+
+$$DFFITs_i = \frac{\hat y_j - \hat y_{j(i)}}{\hat\sigma_{(i)}\sqrt{h_{ii}}}$$
+
+where $\hat y_j - \hat y_{j(i)} = t_i\sqrt{h_{ii}}$ and so $DFFITs_i = t_i\sqrt{\frac{h_{ii}}{1-h_{ii}}}$ 
+
+To calculate DFFITS (assuming model is fit and Cook's distance has been calculated using the above):
+
+- Use studentised residuals and leverage points calculated above to obtain DFFITS. 
+
+### Hadi's Influcence
+
+Hadi's measure is based on influential observations in the response or predictors, or both. 
+
+From Hadi (1992), we get the following methodology: 
+
+>We first order the n observations, using an appropriately chosen robust measure of outlyingness, then divide the data set into two initial subsets: A ‘basic’ subset which contains p +1 ‘good’ observations and a ‘non-basic’ subset which contains the remaining n - p - 1 observations. 
+
+>Second, we compute the relative distance from each point in the data set to the centre of the basic subset, relative to the (possibly singular) covariance matrix of the basic subset. 
+
+>Third, we rearrange the n observations in ascending order accordingly, then divide the data set into two subsets: A basic subset which contains the first p + 2 observations and a non-basic subset which contains the remaining n - p - 2 observations. 
+
+>This process is repeated until an appropriately chosen stopping criterion is met. The final non-basic subset of observations is declared an outlying subset. 
+
+[@hadi_identifying_1992]
+
+The resulting equation is given by: 
+
+$$H_i = \frac{h_{ii}}{1-h_{ii}} + \frac{p+1}{1-h_{ii}}\frac{d^2_i}{1-d^2_i}$$
+
+Where $d_i = \frac{e_i}{\sqrt{SSE}}$. Here we have an additive function formed from the hat matrix with the a function of residuals. Large values for $H_i$ are influential given both the response and the predictor variables. 
+
+### Influencial Observations
+
+There are different methods for choosing a cut-off threshold for Cook's Distance. As $D_i \sim F_{p,n-p}$, cut off can used as the median point, $F_{0.5(p,n-p)}$ [@bollen_regression_1985]. For the test data, this value is close to 1 (0.8392304), however many sources use $\frac{4}{n}$ as a cut-off for identifying influential points, which for the test data was 0.02. 
+
+As the purpose is to identify outliers, visually, $\frac{4}{n}$ will be used, with the conceit that $\approx 1$ is the bar for problematic points. 
+
+For DFFITs, points that are $|DFFITs_i|\ge 3\sqrt{\frac{p+1}{(n-p-1)}}$ will be considered influential.
+
+Kuh, and Welsch recommend 2 as a general cut-off value to indicate a value of influence. [@welsch_linear_1977]
+
+## Remarks
+
+Cook's distance, DFFITS, and Hadi's influence measure are all diagnostic tools used in regression analysis to identify influential observations—those data points that significantly affect the model's parameters or predictions.
+
+All three techniques aim to detect influential data points by assessing the impact of each observation on the fitted regression model. They are particularly useful for identifying outliers or high-leverage points that could disproportionately skew the model’s results. Each method evaluates the effect of removing an observation on the estimated parameters or predicted values, helping to ensure the robustness of the model.
+
+### Differences in each approach
+
+**Cook's Distance** measures the influence of an observation by assessing how much the fitted values (predicted outcomes) change when that observation is removed. It combines information from both the residual (how far the point is from the fitted line) and the leverage (how much the point affects the estimation of the model coefficients). A commonly used rule of thumb is to consider observations with Cook’s Distance greater than $\frac{4}{n}$ or $ F_{\alpha(p, n-p)}$ as potentially influential.
+
+This measure is typically used for an overall assessment of an observation’s influence on the entire regression model. It’s useful to understand the combined effect of leverage and residuals on the model’s fitted values.
+
+**DFFITS** (Difference in Fits) assesses the influence of an observation by evaluating the change in predicted values when that observation is removed. Unlike Cook’s Distance, which provides a single measure for each observation, DFFITS focuses on how the prediction for each observation changes when that observation is excluded. This makes DFFITS more sensitive to the specific impact of an observation on its own predicted value. The rule of thumb is that values greater than $\ge 3\sqrt{\frac{p+1}{(n-p-1)}}$ may indicate influential observations.
+
+The method is more focused on the impact of each observation on its predicted value, making it useful when there is particular concerned about how individual data points affect their own predictions.
+
+**Hadi’s Influence Measure** is designed to detect both high-leverage points and outliers by assessing the combined effect of an observation’s leverage and residual. Hadi’s measure is often considered more robust than Cook’s Distance and DFFITS because it accounts for the influence of both the leverage and the residuals simultaneously. A threshold value of 2 is often used to identify influential observations.
+
+This method is used when a more comprehensive diagnostic is needed that considers both leverage and residuals, especially in situations where you suspect that the influence is due to both the observation's position in the design space and its discrepancy from the model.
+
+
+# Function 
+
+## plot functions
+
+```{r}
+cooks_plot <- function(h, label, dist) {
+    # cooks plot with labels
+       plot(dist, type = "h", 
+            main = "Cook's Distance", 
+            #ylim = c(min(cooks_distance) - mean(co), max(cooks_distance)+1),
+            ylab = "Cook's Distance", 
+            xlab = "Observation", col = "navyblue")
+       abline(h = h, col = "darkred", lty = 2)
+       text(1:length(label), 
+            dist, labels = label, pos = 4, cex = 0.8, col = "navyblue")
+  }
+  
+dffits_plot <- function(h, label, dist) {
+    # DFFITS with labels
+    plot(dist, type = "h", 
+       main = "DFFITS", 
+       ylab = "DFFITS", 
+       xlab = "Observation", col = "forestgreen")
+    abline(h = h, col = "darkred", lty = 2)
+    abline(h = -h, col = "darkred", lty = 2)
+    text(1:length(dist), 
+       dist, labels = label, pos = 4, cex = 0.8, col = "forestgreen")
+  }
+       
+  
+hadi_plot <- function(label, dist) {
+    # Hadi's Measure with labels
+    plot(dist, type = "h", 
+       main = "Hadi's Influence Measure", 
+       ylab = "Hadi's Measure", 
+       xlab =   "Observation", col = "violet")
+    abline(h = 2, col = "darkgrey", lty = 2)
+    text(1:length(dist), 
+       dist, labels = label, pos = 4, cex = 0.8,   col = "violet")
+  }
+```
+
+## Main Function
+
+```{r}
+
+influenceR <- function(model, data, plot = "none") {
+  
+  ##### input validation 
+  if (!is.data.frame(data)) {
+    stop("Input data must be a data.frame.")
+  }
+  
+  if (!inherits(model, c("lm", "glm"))) {
+    stop("Input model must be an lm or glm object.")
+  }
+  
+  if (nrow(data) < 5) {
+    stop("Dataset is too small")
+  }
+  
+  if (ncol(data) < 2) {
+  stop("Input data must have at least 2 columns.")
+  }
+  
+  if (nrow(data) < ncol(data)) {
+    stop("Dataset is the wrong dimension")
+  }
+  
+  if (sum(is.na(data)) / prod(dim(data)) * 100 > 5) {
+    stop("Input data contains more than 5% NA values.")
+  }
+  
+  if (any(is.infinite(as.matrix(data)))) {
+    stop("Input data contains infinite values.")
+  }
+  
+  if (!plot %in% c("none", "all", "cooks", "DFFITS", "Hadi") ) {
+    stop("Input for plot must be either: none, all, cooks, DFFITS, or Hadi")
+  }
+  
+  ##### obtain model variables 
+  # get y
+  y <- model$model[1]
+  y <- data.matrix(y)
+  # get X matrix
+  #X <- model$model[-1]
+  #X <- cbind(intercept = rep(1, nrow(X)), X)
+  #X <- data.matrix(X)
+  X <- model.matrix(model, data = data)
+  
+  # compute Beta hat
+  XtX <- t(X) %*% X
+  XtX_inv <- solve(XtX)
+  beta_hat <- XtX_inv %*% t(X) %*% y
+  
+  #get y-hat (fitted values) 
+  y_hat <- X %*% beta_hat
+  #get residuals
+  residuals <- y - y_hat
+  
+  #get them Hat matrix (and diagonals)
+  H <- X %*% XtX_inv %*% t(X)
+  leverage <- diag(H)
+  
+  #get studentised residuals 
+  n <- nrow(X)
+  p <- ncol(X)
+  RSE <- sqrt(sum(residuals^2) / (n - p))
+  MSE <- sum(residuals^2) / (n - p)
+  studentized_residuals <- residuals / (RSE * sqrt(1 - leverage))
+  high_residuals <- studentized_residuals[abs(studentized_residuals)>= 2]
+  
+  ##### distance measures 
+  
+  # Cook's D
+  cooks_distance <- (residuals^2 / (p * MSE)) * (leverage / (1 - leverage)^2)
+  
+  # DFFITs 
+  dffits <- studentized_residuals * sqrt(leverage) / (1 - leverage)
+  
+  # Hadi's
+  H1 <- leverage / (1 - leverage)
+  H2 <- (residuals^2) / (MSE * (1 - leverage))
+  Hadi_influence <- H1 + H2
+
+  
+  ##### outliers, etc.
+  #prints number of outliers (does nothing for now)
+  if (length(high_residuals) > 0) {
+    #cat("Number of Outliers:", length(high_residuals), "\n")
+  }
+  
+  #calculate influential points 
+  threshold <- 4 / (n - p)
+  influential_points <- which(cooks_distance > threshold)
+  
+  if (length(influential_points) > 0) {
+    #cat("Number of Influential Points:", length(high_residuals),"\n")
+  }
+  
+  ##### put it all into a dataframe
+  influencers <- data.frame(cooks_distance,dffits,Hadi_influence)
+  names(influencers) <- c("Cook's D", "DFFITs", "Hadi's Influence")
+  
+  #### Plotting
+  # options: "none", "all", "Cooks", "DFFITS", "Hadi"
+  
+  #cooks threshold line: 
+  #df1 <- p    
+  #df2 <- n - p
+  #F_critical <- qf(0.5, df1, df2)
+  cooks_cutoff <- 4/nrow(data)
+  dffits_cutoff <- 2*sqrt((p)/(n-p-1))
+  hadi_cutoff <- 2
+  
+  # labels 
+  cooks_label <- rep(NA,length(cooks_distance))
+  dffits_label <- rep(NA,length(dffits))
+  hadi_label <- rep(NA,length(Hadi_influence))
+  for (i in 1:nrow(data)){
+    cooks_label[i] <- ifelse(abs(cooks_distance[i]) >= cooks_cutoff, i, "")
+    dffits_label[i] <- ifelse(abs(dffits[i]) > dffits_cutoff, i, "")
+    hadi_label[i] <- ifelse(abs(Hadi_influence[i]) > hadi_cutoff, i, "")
+  }
+  
+  
+  
+  # empty list of functions 
+  plots <- list()
+  
+  cook_guides <- data.frame(Observation = 1:length(cooks_distance), 
+                                   cooks_distance, Label = cooks_label)
+  dffits_guides <- data.frame(Observation = 1:length(dffits), 
+                                   dffits, Label = dffits_label)
+  hadi_guides <- data.frame(Observation = 1:length(Hadi_influence), 
+                                   Hadi_influence, Label = hadi_label)
+  
+  
+  if (plot == "cooks" | plot == "all") {
+    
+    plots$Cooks <- ggplot(cook_guides, aes(x = Observation, y = cooks_distance)) +
+    geom_segment(aes(xend = Observation, yend = 0)) +
+    geom_hline(yintercept = cooks_cutoff, linetype = "dashed", color = "darkred") +
+    geom_text(aes(label = Label), vjust = -0.5) +
+    labs(title = "Cook's Distance", y = "Cook's Distance", x = "Observation") 
+  }
+  
+  if (plot == "DFFITS" | plot == "all") {
+    plots$DFFITS <- ggplot(dffits_guides, aes(x = Observation, y = dffits)) +
+    geom_segment(aes(xend = Observation, yend = 0)) +
+    geom_hline(yintercept = dffits_cutoff, linetype = "dashed", color = "darkred") +
+    geom_text(aes(label = Label), vjust = -0.5) +
+    labs(title = "DFFITS", y = "DFFITS", x = "Observation") 
+  }
+  
+  if (plot == "Hadi" | plot == "all") {
+    plots$Hadi <- ggplot(hadi_guides, aes(x = Observation, y = Hadi_influence)) +
+    geom_segment(aes(xend = Observation, yend = 0)) +
+    geom_hline(yintercept = hadi_cutoff, linetype = "dashed", color = "darkred") +
+    geom_text(aes(label = Label), vjust = -0.5) +
+    labs(title = "Hadi's Influence", y = "Hadi's Influence", x = "Observation")
+  }
+  
+  
+  #   # cooks plot with labels
+  #      plot(cooks_d, type = "h", 
+  #           main = "Cook's Distance", 
+  #           #ylim = c(min(cooks_distance) - mean(co), max(cooks_distance)+1),
+  #           ylab = "Cook's Distance", 
+  #           xlab = "Observation", col = "navyblue")
+  #      abline(h = cooks_cut, col = "darkred", lty = 2)
+  #      text(1:length(cooks_label), 
+  #           cooks_distance, labels = cooks_label, pos = 4, cex = 0.8, col = "navyblue")
+  # }
+  # 
+  # if (plot == "DFFITS" | plot == "all") {
+  #   # DFFITS with labels
+  #   plot(dffits, type = "h", 
+  #      main = "DFFITS", 
+  #      ylab = "DFFITS", 
+  #      xlab = "Observation", col = "forestgreen")
+  #   abline(h = dffits_cut, col = "darkred", lty = 2)
+  #   abline(h = -dffits_cut, col = "darkred", lty = 2)
+  #   text(1:length(dffits), 
+  #      dffits, labels = dffits_label, pos = 4, cex = 0.8, col = "forestgreen")
+  #   
+  # }
+  #      
+  # 
+  # if (plot == "Hadi" | plot == "all") {
+  #   # Hadi's Measure with labels
+  #   plot(Hadi_influence, type = "h", 
+  #      main = "Hadi's Influence Measure", 
+  #      ylab = "Hadi's Measure", 
+  #      xlab =   "Observation", col = "violet")
+  #   abline(h = 2, col = "darkgrey", lty = 2)
+  #   text(1:length(Hadi_influence), 
+  #      Hadi_influence, labels = hadi_label, pos = 4, cex = 0.8,   col = "violet")
+  # }
+  
+
+  #### return
+  
+  return(list(influence_measures = influencers, plots = plots))
+  
+}
+
+
+```
+
+# Tests
+
+### Create Test File
+
+```{r message=FALSE}
+usethis::use_testthat()
+```
+
+### Sample data and models
+
+```{r}
+#test model:
+data1 <- mtcars
+model1 <- lm(mpg ~ wt + hp, data = data1)
+
+### generated data
+data2 <- randu
+model2 <- glm(z ~ x + y, data = data2)
+data3 <- data.frame(a = rep(c(NA,runif(1)), 50), b = rnorm(100), c=(runif(100)))
+model3 <- lm(b ~ a + c, data = data3)
+data4 <- data.frame(y = c(runif(10),Inf), x = 1:11, z = 21:31)
+model4 <- lm(z ~ x, data = data4)
+data5 <- data.frame(x = c(1:4), y = c(rnorm(4)))
+model5 <- lm(y ~ x, data = data5)
+data6 <- data.frame(y = c(1:10))
+model6 <- lm(y ~ 1, data = data6)
+matx7 <- matrix(1:30, nrow = 5)
+data7 <- data.frame(matx7)
+model7 <- lm(X1 ~ X2, data = data7)
+
+```
+
+
+### function tests
+
+
+```{r tests}
+context("Testing influenceR context")
+
+## invalid inputs 
+test_that("function influenceR gives helpful errors", 
+          {
+            expect_error(influenceR(model1, matrix(data1)), 
+               "Input data must be a data.frame.")
+            
+            expect_error(influenceR(mtcars, mtcars), 
+               "Input model must be an lm or glm object.")
+            
+            expect_error(influenceR(model6, data6),
+                "Input data must have at least 2 columns.")
+            
+            expect_error(influenceR(model5, data5), 
+               "Dataset is too small")
+            
+            expect_error(influenceR(model7, data7), 
+               "Dataset is the wrong dimension")
+            
+            expect_error(influenceR(model4, data4), 
+               "Input data contains infinite values.")
+            
+              expect_error(influenceR(model3, data3), 
+               "Input data contains more than 5% NA values.")
+              
+              expect_error(influenceR(model1, data1, plot = "phil collins"), 
+               "Input for plot must be either: none, all, cooks, DFFITS, or Hadi")
+              
+              output <- influenceR(model1, data1, plot = "none")
+              expect_true(is.list(output))
+              expect_equal(names(output$influence_measures), c("Cook's D", "DFFITs", "Hadi's Influence"))
+              
+              
+              # Assuming pre-calculated values for a specific row for testing
+              expect_equal(round(output[[1]][1, "Cook's D"], 3), 0.016)
+              expect_equal(round(output[[1]][1, "DFFITs"], 3), -0.223)
+              expect_equal(round(output[[1]][1, "Hadi's Influence"], 3), 1.076)
+            
+            })
+
+## valid inputs
+test_that("function influenceR works with dataframes, lm/glm objects, and plots", {
+  
+  pdf(NULL)
+  on.exit(dev.off())
+  
+  expect_silent(influenceR(model1, mtcars, plot = "none"))
+  expect_silent(influenceR(model1, mtcars, plot = "cooks"))
+  expect_silent(influenceR(model1, mtcars, plot = "DFFITS"))
+  expect_silent(influenceR(model1, mtcars, plot = "Hadi"))
+  expect_silent(influenceR(model1, mtcars, plot = "all"))
+  
+})
+
+```
+
+### Testing using R file
+
+**note**: the "R/test.R" file is a duplicate of the code above
+
+```{r}
+test_file("R/test.R")
+```
+
+# Examples
+
+```{r}
+data1 <- mtcars
+model1 <- lm(mpg ~ wt + hp, data = data1)
+sample1 <- influenceR(model1, data1, "all")
+
+## applying a theme to a grid of plots
+library(gridExtra)
+g2 <- lapply(sample1$plots, function(p) p+theme_minimal())
+grid.arrange(grobs = g2, ncol = 1)
+
+#### Comparing Influence measures
+## max cooks D vs Hadi's
+cat("difference in max Cook's vs max Hadi's = ", 
+    max(sample1$influence_measures$`Cook's D`) - max(sample1$influence_measures$`Hadi's Influence`))
+
+
+
+```
+
+
+
+
+
+_____
+
+
+\begin{center}
+End of Assignment 2, DATA501
+
+\end{center}
+
+_____
+
+
+# References
+
+<div id="refs"></div>
