@@ -18,6 +18,8 @@
 #' #import dataset mtcars
 #' data1 <- mtcars
 #' model1 <- lm(mpg ~ wt + hp, data = data1)
+#'
+#' ## run function to create influence measures + plots
 #' sample1 <- influenceR(model1, data1, "all")
 #'
 #' ## show dataframe of measures
@@ -31,6 +33,12 @@
 #' sample1$plots$DFFITS
 #' sample1$plots$Hadi
 #'
+#' ## run function to create dataframe only (no plots)
+#' sample2 <- influenceR(model1, data1)
+#' sample2
+#'
+#' ## view / manipulate individual influence measure
+#' sample2$DFFITs
 
 
 influenceR <- function(model, data, plot = "none") {
