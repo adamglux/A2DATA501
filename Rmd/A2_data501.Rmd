@@ -240,6 +240,13 @@ library(roxygen2)
 devtools::check()
 ```
 
+### generate documentation  
+
+```{r}
+document()
+```
+
+
 
 ### set up license
 ```{r}
