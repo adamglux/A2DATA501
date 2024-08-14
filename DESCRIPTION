@@ -1,11 +1,10 @@
 Package: influenceR
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Easy Way to Extract and Plot Influential Data in Three Criteria: Cook's, Hadi's, DFFITS 
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Author: adam g. 
+Maintainer: adam g. <glucksadam@myvuw.ac.nz>
+Description: The `influenceR` function calculates and evaluates key influence measures, including Cook's Distance, DFFITS, and Hadi's Influence, for linear or generalized linear models by computing diagnostic metrics to identify influential observations. The function has an optional setting that will generate plots to visualize these influence measures, aiding in the detection of data points that may impact the model's fit. This tool is helpful for model assessment and ensuring the reliability of statistical inferences.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
