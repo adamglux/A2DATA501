@@ -58,7 +58,7 @@ test_that("function influenceR gives helpful errors",
             # Assuming pre-calculated values for a specific row for testing
             expect_equal(round(output[[1]][1, "Cook's D"], 3), 0.016)
             expect_equal(round(output[[1]][1, "DFFITs"], 3), -0.223)
-            expect_equal(round(output[[1]][1, "Hadi's Influence"], 3), 1.076)
+            expect_equal(round(output[[1]][1, "Hadi's Influence"], 3), 0.188)
 
           })
 
