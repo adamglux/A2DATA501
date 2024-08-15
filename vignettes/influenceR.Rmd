@@ -136,10 +136,7 @@ library(influenceR)
 ### suggested libraries  
 
 ```{r eval=FALSE, include=TRUE}
-library(usethis)
-library(devtools)
 library(dplyr)
-library(stats)
 library(ggplot2)
 library(gridExtra)
 ```
