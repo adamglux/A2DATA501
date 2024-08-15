@@ -165,7 +165,8 @@ influenceR <- function(model, data, plot = "none") {
     plots$Cooks <- ggplot(cook_guides, aes(x = cook_guides[,1], y = cooks_distance)) +
       geom_segment(aes(xend = cook_guides[,1], yend = 0)) +
       geom_hline(yintercept = cooks_cutoff, linetype = "dashed", color = "darkred") +
-      geom_text(aes(label = cook_guides[,3]), vjust = 0.75, check_overlap = T, nudge_x = 0.7) +
+      geom_text(aes(label = cook_guides[,3]), vjust = 0.75, check_overlap = T,
+                family = "Courier", nudge_x = 0.75) +
       labs(title = "Cook's Distance", y = "Cook's Distance", x = "Observation")
   }
 
@@ -174,7 +175,8 @@ influenceR <- function(model, data, plot = "none") {
       geom_segment(aes(xend = dffits_guides[,1], yend = 0)) +
       geom_hline(yintercept = dffits_cutoff, linetype = "dashed", color = "darkred") +
       geom_hline(yintercept = -dffits_cutoff, linetype = "dashed", color = "darkred") +
-      geom_text(aes(label = dffits_guides[,3]),  vjust = 0.75, check_overlap = T, nudge_x = 0.7) +
+      geom_text(aes(label = dffits_guides[,3]),  vjust = 0.75, check_overlap = T,
+                family = "Courier", nudge_x = 0.75) +
       labs(title = "DFFITS", y = "DFFITS", x = "Observation")
   }
 
@@ -182,7 +184,8 @@ influenceR <- function(model, data, plot = "none") {
     plots$Hadi <- ggplot(hadi_guides, aes(x = hadi_guides[,1], y = Hadi_influence)) +
       geom_segment(aes(xend = hadi_guides[,1], yend = 0)) +
       geom_hline(yintercept = hadi_cutoff, linetype = "dashed", color = "darkred") +
-      geom_text(aes(label = hadi_guides[,3]),  vjust = 0.75, check_overlap = T, nudge_x = 0.7) +
+      geom_text(aes(label = hadi_guides[,3]),  vjust = 0.75, check_overlap = T,
+                family = "Courier", nudge_x = 0.75) +
       labs(title = "Hadi's Influence", y = "Hadi's Influence", x = "Observation")
   }
 
