@@ -22,7 +22,7 @@ You can install the development version of influenceR from
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("adamglux/A2DATA501")
+devtools::install_github("adamglux/A2DATA501", build_vignettes = TRUE)
 ```
 
 ## Example
