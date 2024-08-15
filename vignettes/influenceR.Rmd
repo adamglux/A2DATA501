@@ -18,4 +18,6 @@ knitr::opts_chunk$set(
 library(influenceR)
 ```
 
+# This is my vignette 
 
+Text text text 
