@@ -18,7 +18,8 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of influenceR is to ...
+The `influenceR` function calculates and evaluates key influence measures, including Cook's Distance, DFFITS, and Hadi's Influence, for linear or generalized linear models by computing diagnostic metrics to identify influential observations. The function has an optional setting that will generate plots to visualize these influence measures, aiding in the detection of data points that may impact the model's fit. This tool is helpful for model assessment and ensuring the reliability of statistical inferences.
+
 
 ## Installation
 
@@ -59,21 +60,11 @@ sample2 <- influenceR(model1, data1)
 ## show plots
 
 ## show individual plots
-sample1$plots$Cooks + theme_minimal()
-sample1$plots$DFFITS + theme_minimal()
-sample1$plots$Hadi + theme_minimal()
-
-
-
+sample1$plots$Cooks 
+sample1$plots$DFFITS 
+sample1$plots$Hadi  
 ```
 
 
 
 
-You can also embed plots, for example:
-
-```{r pressure, echo = FALSE}
-plot(pressure)
-```
-
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.
