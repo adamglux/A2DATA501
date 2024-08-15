@@ -6,14 +6,14 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-The `influenceR` function calculates and evaluates key influence
-measures, including Cook’s Distance, DFFITS, and Hadi’s Influence, for
-linear or generalized linear models by computing diagnostic metrics to
-identify influential observations. The function has an optional setting
-that will generate plots to visualize these influence measures, aiding
-in the detection of data points that may impact the model’s fit. This
-tool is helpful for model assessment and ensuring the reliability of
-statistical inferences.
+The `influenceR` function, inside the `influenceR` package, calculates
+and evaluates key influence measures, including Cook’s Distance, DFFITS,
+and Hadi’s Influence, for linear or generalized linear models by
+computing diagnostic metrics to identify influential observations. The
+function has an optional setting that will generate plots to visualize
+these influence measures, aiding in the detection of data points that
+may impact the model’s fit. This tool is helpful for model assessment
+and ensuring the reliability of statistical inferences.
 
 ## Installation
 
