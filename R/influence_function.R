@@ -97,12 +97,18 @@ influenceR <- function(model, data, plot = "none") {
   H <- X %*% XtX_inv %*% t(X)
   leverage <- diag(H)
 
+  #identity matrix
+
+
   #get studentised residuals
   n <- nrow(X)
   p <- ncol(X)
+  Id <- diag(rep(1, n))
+  SSE <- as.numeric(t(y) %*% (Id - H) %*% y)
   RSE <- sqrt(sum(residuals^2) / (n - p))
   MSE <- sum(residuals^2) / (n - p)
   studentized_residuals <- residuals / (RSE * sqrt(1 - leverage))
+  normalised_residuals <- residuals / sqrt(SSE)
   high_residuals <- studentized_residuals[abs(studentized_residuals)>= 2]
 
   ##### distance measures
@@ -115,8 +121,9 @@ influenceR <- function(model, data, plot = "none") {
 
   # Hadi's
   H1 <- leverage / (1 - leverage)
-  H2 <- (residuals^2) / (MSE * (1 - leverage))
-  Hadi_influence <- H1 + H2
+  H2 <- p+1 / (1 - leverage) #(residuals^2) / (MSE * (1 - leverage))
+  H3 <- normalised_residuals^2 / (1 - normalised_residuals^2)
+  Hadi_influence <- H1 + (H2 * H3)
 
   ##### put it all into a dataframe
   influencers <- data.frame(cooks_distance,dffits,Hadi_influence)
@@ -166,6 +173,7 @@ influenceR <- function(model, data, plot = "none") {
     plots$DFFITS <- ggplot(dffits_guides, aes(x = dffits_guides[,1], y = dffits)) +
       geom_segment(aes(xend = dffits_guides[,1], yend = 0)) +
       geom_hline(yintercept = dffits_cutoff, linetype = "dashed", color = "darkred") +
+      geom_hline(yintercept = -dffits_cutoff, linetype = "dashed", color = "darkred") +
       geom_text(aes(label = dffits_guides[,3]),  vjust = 0.75, check_overlap = T, nudge_x = 0.7) +
       labs(title = "DFFITS", y = "DFFITS", x = "Observation")
   }
