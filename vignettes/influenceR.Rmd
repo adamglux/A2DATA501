@@ -6,10 +6,9 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 bibliography: refs.bib
-nocite: '@*'  
 ---
 
-```{r, include = FALSE}
+```{r include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -128,7 +127,7 @@ This method is used when a more comprehensive diagnostic is needed that consider
 
 You can install the development version of `influenceR` from [GitHub](https://github.com/) with:
 
-```{undefined eval=FALSE, include=TRUE}
+```
 # install.packages("devtools")
 devtools::install_github("adamglux/A2DATA501")
 library(influenceR)
@@ -147,7 +146,7 @@ library(gridExtra)
 
 # Examples
 
-```{r fig.height=4, fig.width=6}
+```{r fig.height=3, fig.width=4.5}
 #use data from mtcars
 #plot all 
 data1 <- mtcars
@@ -162,23 +161,14 @@ sample2 <- influenceR(model = model1, data = data1)
 tail(sample2)
 
 #show plots one by one 
-#note: adams.plot() is a custom theme made for ggplots
-#this theme isn't publicly available
-sample1$plots$Cooks + theme_linedraw()
-sample1$plots$DFFITS + theme_void()
-sample1$plots$Hadi + theme_classic()
+sample1$plots$Cooks 
+sample1$plots$DFFITS 
+sample1$plots$Hadi 
 
-## apply a theme to a grid of plots
+# apply a theme to a grid of plots
 #library(gridExtra)
-g2 <- lapply(sample1$plots, function(p) p+adams.plot())
-grid.arrange(grobs = g2, ncol = 2, nrow = 2)
-
-
-#### Comparing Influence measures
-## max cooks D vs Hadi's
-cat("difference in max Cook's vs max Hadi's = ", 
-    max(sample1$influence_measures$`Cook's D`) - 
-      max(sample1$influence_measures$`Hadi's Influence`))
+#g2 <- lapply(sample1$plots, function(p) p+theme_minimal())
+#grid.arrange(grobs = g2, ncol = 2, nrow = 2)
 ```
 
 # References
